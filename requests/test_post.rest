@@ -2,7 +2,7 @@ POST http://localhost:3001/api/notes HTTP/1.1
 Content-Type: application/json
 
 {
-  "content": "I miss python",
+  "content": "I",
   "important": true
 }
 
@@ -11,3 +11,33 @@ GET http://localhost:3001/api/notes
 
 ###
 GET http://localhost:3001/api/notes/628ba0ce61eeac0e6eba69ef
+
+###
+PUT http://localhost:3001/api/notes/6287c3db0a64bf812af7cd4c
+Content-Type: application/json
+
+{
+  "content": "HTML is Hard",
+  "important": true
+}
+
+###
+# invalid edit
+PUT http://localhost:3001/api/notes/6287c3db0a64bf812af7cd4c
+Content-Type: application/json
+
+{
+  "content": "HTM",
+  "important": true
+}
+
+###
+# malformed id
+GET http://localhost:3001/api/notes/13
+
+###
+# bad ID
+GET http://localhost:3001/api/notes/628ba0ce61aeac0e6eba69ef
+
+###
+DELETE http://localhost:3001/api/notes/628bb0fc25fdc62d187d4509
