@@ -2,7 +2,8 @@ module.exports = {
   'env': {
     'browser': true,
     'commonjs': true,
-    'es2021': true
+    'es2021': true,
+    'jest': true,
   },
   'extends': 'eslint:recommended',
   'parserOptions': {
@@ -10,7 +11,6 @@ module.exports = {
   },
   'rules': {
     'eqeqeq': 'error',
-    'no-trailing-spaces': 'error',
     'object-curly-spacing': [
       'error', 'always'
     ],
@@ -33,6 +33,7 @@ module.exports = {
     'semi': [
       'error',
       'never'
-    ]
+    ],
+    'no-unused-vars': 0,
   }
 }
