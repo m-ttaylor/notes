@@ -1,17 +1,42 @@
 const mongoose = require('mongoose')
+const bcrypt = require('bcrypt')
 const helper = require('./test_helper')
 const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 const Note = require('../models/note')
+const User = require('../models/user')
 
 beforeEach(async () => {
   await Note.deleteMany({})
+  await User.deleteMany({})
 
   const noteObjects = helper.initialNotes
     .map(note => new Note(note))
-  const promiseArray = noteObjects.map(note => note.save())
-  await Promise.all(promiseArray)
+  const notePromiseArray = noteObjects.map(note => note.save())
+  await Promise.all(notePromiseArray)
+
+  const saltRound = 10
+
+  const passwordHashes = []
+  for (let user of helper.initialUsers) {
+    passwordHashes.push(
+      await bcrypt.hash(user.password, saltRound)
+    )
+  }
+
+  const userObjects = helper.initialUsers
+    .map((user, i) => {
+
+      return new User({
+        username: user.username,
+        name: user.name,
+        passwordHash: passwordHashes[i]
+      })
+    })
+
+  const userPromiseArray = userObjects.map(user => user.save())
+  await Promise.all(userPromiseArray)
 })
 
 describe('when there are initially some saved notes', () => {
@@ -74,15 +99,29 @@ describe('viewing a specific note', () => {
 })
 
 describe('addition of a new note', () => {
-
+  const credentials = {
+    username: 'royboy',
+    password: 'roystheboy'
+  }
+  
   test('succeeds with valid data', async () => {
+
+    const loginResponse = await api
+      .post('/api/login')
+      .send(credentials)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const token = loginResponse.body.token
+
     const newNote = {
       content: 'async/await simplifies making async calls',
       important: true,
     }
   
-    await api
+    const response = await api
       .post('/api/notes')
+      .set({ Authorization: `bearer ${token}` })
       .send(newNote)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -97,13 +136,37 @@ describe('addition of a new note', () => {
     )
   })
 
-  test('fails with status code 400 if data is invalid', async () => {
+  test('fails with status code 401 if authorization is not included', async () => {
     const newNote = {
       important: true
     }
 
     await api
       .post('/api/notes')
+      .send(newNote)
+      .expect(401)
+
+    const notesAtEnd = await helper.notesInDb()
+    expect(notesAtEnd).toHaveLength(helper.initialNotes.length)
+  })
+
+  test('fails with status code 400 if data is invalid', async () => {
+
+    const loginResponse = await api
+      .post('/api/login')
+      .send(credentials)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const token = loginResponse.body.token
+
+    const newNote = {
+      important: true
+    }
+
+    await api
+      .post('/api/notes')
+      .set({ Authorization: `bearer ${token}` })
       .send(newNote)
       .expect(400)
 
